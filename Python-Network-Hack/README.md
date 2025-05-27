@@ -6,6 +6,8 @@ A collection of Python scripts for network security analysis and testing using S
 
 **Faustino**
 
+Computer Science student at Andhra University, India, with a focus on Cybersecurity. Passionate about network security, ethical hacking, and developing tools for security analysis.
+
 - 📧 Email: eadpea2020@gmail.com
 - 🔗 LinkedIn: [Faustino Henriques]
 - 📸 Instagram: Henriques.dev
@@ -42,7 +44,7 @@ cd Python-Network-Hack
 pip install -r requirements.txt
 ```
 
-## 🚀 Features
+## 🚀 Features 
 
 - Network scanning and discovery
 - Packet manipulation and analysis
