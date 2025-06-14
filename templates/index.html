@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador de Dicionário de Senhas</title>
+    <link rel="icon" href="/uploads/suport.png" type="image/png">
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            background-color: #000;
+            color: #0f0;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            margin: 20px auto;
+            border-radius: 18px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            background: rgba(0, 32, 0, 0.35);
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            border: 1px solid rgba(15, 255, 15, 0.18);
+        }
+        h1 {
+            text-align: center;
+            color: #0f0;
+            text-shadow: 0 0 5px #0f0;
+            font-size: clamp(1.5rem, 5vw, 2.5rem);
+        }
+        form {
+            margin-top: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #0f0;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+        input[type="file"], textarea {
+            margin-bottom: 10px;
+            background-color: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input[type="range"] {
+            width: 100%;
+            max-width: 200px;
+            accent-color: #0f0;
+        }
+        .slider-value {
+            min-width: 30px;
+            font-weight: bold;
+            color: #0f0;
+            text-shadow: 0 0 2px #0f0;
+        }
+        button {
+            padding: 10px;
+            background-color: #0f0;
+            color: #000;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            width: 100%;
+            font-size: clamp(0.9rem, 3vw, 1.1rem);
+        }
+        button:hover {
+            background-color: #00ff00;
+        }
+        .error {
+            color: #ff0000;
+        }
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: #0f0;
+            font-size: clamp(0.8rem, 2.5vw, 1rem);
+        }
+        .footer img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+        }
+        .footer a {
+            color: #0f0;
+            text-decoration: none;
+            margin: 0 10px;
+        }
+        .footer a:hover {
+            text-decoration: underline;
+        }
+        .chat-container {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 250px;
+            height: 300px;
+            background: rgba(0, 32, 0, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(15, 255, 15, 0.18);
+            transition: all 0.3s ease-in-out;
+            z-index: 1000;
+            cursor: move;
+        }
+        .chat-container.collapsed {
+            transform: translateY(calc(100% - 40px));
+        }
+        .chat-header {
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px 10px 0 0;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+        .chat-header h2 {
+            margin: 0;
+            font-size: 1rem;
+            color: #0f0;
+        }
+        .chat-controls {
+            display: flex;
+            gap: 5px;
+        }
+        .chat-toggle, .chat-close {
+            background: none;
+            border: none;
+            color: #0f0;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 0 5px;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+        }
+        .chat-toggle:hover, .chat-close:hover {
+            background: rgba(0, 255, 0, 0.2);
+        }
+        .chat-messages {
+            height: 180px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .chat-input {
+            display: flex;
+            gap: 5px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 0 0 10px 10px;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 8px;
+            background: #000;
+            color: #0f0;
+            border: 1px solid #0f0;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        .chat-input button {
+            width: auto;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+        }
+        #link-popup {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.9);
+            color: #0f0;
+            border: 1px solid #0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            z-index: 2000;
+            display: none;
+            pointer-events: none; /* Allows mouse events to pass through */
+            white-space: nowrap;
+            max-width: 300px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            .slider-container {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            input[type="range"] {
+                max-width: 100%;
+            }
+            .chat-container {
+                width: 200px;
+                right: 10px;
+                bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="matrix"></canvas>
+    <div class="container">
+        <h1>Gerador de Dicionário de Senhas</h1>
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+        <form method="POST" enctype="multipart/form-data">
+            <label for="file">Arquivo com senhas base (uma por linha):</label>
+            <input type="file" id="file" name="file" accept=".txt">
+            <br>
+            <label for="manual_input">Ou digite as senhas base (uma por linha):</label>
+            <textarea id="manual_input" name="manual_input" rows="5" cols="50"></textarea>
+            <br>
+            <label for="n_var">Quantas variações por senha deseja gerar?</label>
+            <div class="slider-container">
+                <input type="range" id="n_var" name="n_var" min="1" max="20" value="1" oninput="document.getElementById('slider-value').textContent = this.value">
+                <span class="slider-value" id="slider-value">1</span>
+            </div>
+            <label>
+                <input type="checkbox" name="especiais"> Adicionar caracteres especiais
+            </label>
+            <br>
+            <button type="submit">Gerar Dicionário</button>
+        </form>
+    </div>
+    <div class="chat-container">
+        <div class="chat-header" id="chat-header">
+            <h2>Chat de Dúvidas</h2>
+            <div class="chat-controls">
+                <button class="chat-toggle" id="chat-toggle">▼</button>
+                <button class="chat-close" id="chat-close">×</button>
+            </div>
+        </div>
+        <div class="chat-messages" id="chat-messages"></div>
+        <div class="chat-input">
+            <input type="text" id="chat-input" placeholder="Digite sua dúvida...">
+            <button onclick="sendMessage()">Enviar</button>
+        </div>
+    </div>
+    <div class="footer">
+        <img src="/uploads/Profile%20(1).png" alt="Criador">
+        <p>Criado por <a href="https://github.com/f50kdev" target="_blank" class="footer-link">Faustino Henriques</a></p>
+        <p>Redes Sociais: 
+            <a href="https://github.com/f50kdev" target="_blank" class="footer-link">GitHub</a> |
+            <a href="https://www.linkedin.com/in/faustino-henriques-317a84208/" target="_blank" class="footer-link">LinkedIn</a> |
+            <a href="https://instagram.com/henriques.dev" target="_blank" class="footer-link">Instagram</a>
+        </p>
+    </div>
+    <div id="link-popup"></div>
+
+    <script>
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()_+{}[]|;:,.<>?';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = [];
+        for (let i = 0; i < columns; i++) {
+            drops[i] = 1;
+        }
+        function draw() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.3)';
+            ctx.font = fontSize + 'px monospace';
+            for (let i = 0; i < drops.length; i++) {
+                const text = characters.charAt(Math.floor(Math.random() * characters.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[i] = 0;
+                }
+                drops[i]++;
+            }
+        }
+        setInterval(draw, 33);
+
+        // Chat functionality
+        const chatContainer = document.querySelector('.chat-container');
+        const chatHeader = document.getElementById('chat-header');
+        const chatToggle = document.getElementById('chat-toggle');
+        const chatClose = document.getElementById('chat-close');
+        let isDragging = false;
+        let currentX;
+        let currentY;
+        let initialX;
+        let initialY;
+        let xOffset = 0;
+        let yOffset = 0;
+
+        function toggleChat() {
+            chatContainer.classList.toggle('collapsed');
+            chatToggle.textContent = chatContainer.classList.contains('collapsed') ? '▲' : '▼';
+        }
+
+        function closeChat() {
+            chatContainer.style.display = 'none';
+        }
+
+        function dragStart(e) {
+            if (e.type === "touchstart") {
+                initialX = e.touches[0].clientX - xOffset;
+                initialY = e.touches[0].clientY - yOffset;
+            } else {
+                initialX = e.clientX - xOffset;
+                initialY = e.clientY - yOffset;
+            }
+
+            if (e.target === chatHeader) {
+                isDragging = true;
+            }
+        }
+
+        function dragEnd(e) {
+            initialX = currentX;
+            initialY = currentY;
+            isDragging = false;
+        }
+
+        function drag(e) {
+            if (isDragging) {
+                e.preventDefault();
+
+                if (e.type === "touchmove") {
+                    currentX = e.touches[0].clientX - initialX;
+                    currentY = e.touches[0].clientY - initialY;
+                } else {
+                    currentX = e.clientX - initialX;
+                    currentY = e.clientY - initialY;
+                }
+
+                xOffset = currentX;
+                yOffset = currentY;
+
+                setTranslate(currentX, currentY, chatContainer);
+            }
+        }
+
+        function setTranslate(xPos, yPos, el) {
+            el.style.transform = `translate3d(${xPos}px, ${yPos}px, 0)`;
+        }
+
+        chatHeader.addEventListener("touchstart", dragStart, false);
+        document.addEventListener("touchend", dragEnd, false);
+        document.addEventListener("touchmove", drag, false);
+
+        chatHeader.addEventListener("mousedown", dragStart, false);
+        document.addEventListener("mouseup", dragEnd, false);
+        document.addEventListener("mousemove", drag, false);
+
+        chatToggle.addEventListener("click", toggleChat);
+        chatClose.addEventListener("click", closeChat);
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                const chatMessages = document.getElementById('chat-messages');
+                chatMessages.innerHTML += `<p><strong>Você:</strong> ${message}</p>`;
+                input.value = '';
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: message })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        chatMessages.innerHTML += `<p><strong>Erro:</strong> ${data.error}</p>`;
+                    } else {
+                        chatMessages.innerHTML += `<p><strong>Assistente:</strong> ${data.response}</p>`;
+                    }
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                })
+                .catch(error => {
+                    chatMessages.innerHTML += `<p><strong>Erro:</strong> ${error}</p>`;
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                });
+            }
+        }
+
+        // Allow sending message with Enter key
+        document.getElementById('chat-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Link pop-up functionality
+        const linkPopup = document.getElementById('link-popup');
+        const footerLinks = document.querySelectorAll('.footer-link');
+
+        footerLinks.forEach(link => {
+            link.addEventListener('mouseover', function(e) {
+                linkPopup.textContent = this.href;
+                linkPopup.style.left = `${e.pageX + 10}px`;
+                linkPopup.style.top = `${e.pageY + 10}px`;
+                linkPopup.style.display = 'block';
+            });
+
+            link.addEventListener('mouseout', function() {
+                linkPopup.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html> 
